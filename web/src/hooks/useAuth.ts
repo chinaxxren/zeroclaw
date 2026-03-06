@@ -49,21 +49,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // On mount: check if server requires pairing at all
   useEffect(() => {
-    if (checkAuth()) return; // already have a token, no need to check
     let cancelled = false;
+    
+    // Always check server's require_pairing setting first
     getPublicHealth()
       .then((health) => {
         if (cancelled) return;
         if (!health.require_pairing) {
+          // Server doesn't require pairing, allow access without token
+          setAuthenticated(true);
+        } else if (checkAuth()) {
+          // Server requires pairing and we have a token
           setAuthenticated(true);
         }
       })
       .catch(() => {
-        // health endpoint unreachable — fall back to showing pairing dialog
+        // health endpoint unreachable — fall back to checking local token
+        if (!cancelled && checkAuth()) {
+          setAuthenticated(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    
     return () => {
       cancelled = true;
     };

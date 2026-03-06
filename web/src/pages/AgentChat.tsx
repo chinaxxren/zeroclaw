@@ -10,6 +10,19 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+// 兼容 HTTP 环境的 UUID 生成函数
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // 降级方案：生成符合 UUID v4 格式的随机 ID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export default function AgentChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -52,7 +65,7 @@ export default function AgentChat() {
             setMessages((prev) => [
               ...prev,
               {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 role: 'agent',
                 content,
                 timestamp: new Date(),
@@ -68,7 +81,7 @@ export default function AgentChat() {
           setMessages((prev) => [
             ...prev,
             {
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               role: 'agent',
               content: `[Tool Call] ${msg.name ?? 'unknown'}(${JSON.stringify(msg.args ?? {})})`,
               timestamp: new Date(),
@@ -80,7 +93,7 @@ export default function AgentChat() {
           setMessages((prev) => [
             ...prev,
             {
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               role: 'agent',
               content: `[Tool Result] ${msg.output ?? ''}`,
               timestamp: new Date(),
@@ -92,7 +105,7 @@ export default function AgentChat() {
           setMessages((prev) => [
             ...prev,
             {
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               role: 'agent',
               content: `[Error] ${msg.message ?? 'Unknown error'}`,
               timestamp: new Date(),
@@ -123,7 +136,7 @@ export default function AgentChat() {
     setMessages((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: 'user',
         content: trimmed,
         timestamp: new Date(),
